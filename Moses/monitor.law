@@ -1,0 +1,68 @@
+law(monitor, language(javascript))
+
+monitor = "monitor@new-host.home";
+
+UPON("adopted", function() {
+  if (this.self !== monitor) {
+    DO("forward", {
+      sender: this.self,
+      receiver: monitor,
+      message: {
+        event: "adopted",
+        controller: this.self
+      }
+    });
+    return true;
+  }
+});
+
+UPON("disconnected", function() {
+  if (this.self !== monitor) {
+    DO("forward", {
+      sender: this.self,
+      receiver: monitor,
+      message: {
+        event: "disconnected",
+        controller: this.self
+      }
+    });
+  }
+  DO("quit");
+  return true;
+});
+
+UPON("sent", function() {
+  if (this.self !== monitor) {
+    DO("forward", {
+      sender: this.sender,
+      receiver: monitor,
+      message: {
+        event: "sent",
+        controller: this.self,
+        sender: this.sender,
+        receiver: this.receiver,
+        message: this.message
+      }
+    });
+  }
+  DO("forward");
+  return true;
+});
+
+UPON("arrived", function() {
+  if (this.self !== monitor) {
+    DO("forward", {
+      sender: this.sender,
+      receiver: monitor,
+      message: {
+        event: "arrived",
+        controller: this.self,
+        sender: this.sender,
+        receiver: this.receiver,
+        message: this.message
+      }
+    });
+  }
+  DO("deliver");
+  return true;
+});
