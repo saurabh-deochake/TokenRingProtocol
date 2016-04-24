@@ -95,30 +95,7 @@ UPON("adopted", function() {
 	  });
 	  
 	}
-	
-    /*
-	if (this.self === a){
-		 DO("set", {
-			 key: "next",
-			 value: "b@ROMINAs-Air.home"
-	  });
-	 }
-	if (this.self === b){
-		 DO("set", {
-			 key: "next",
-			 value: "c@ROMINAs-Air.home"
-	  });
-	 }
-	if (this.self === c){
-		 DO("set", {
-			 key: "next",
-			 value: "a@ROMINAs-Air.home"
-	  });
-	}
-    */
-    
-    
-    return true;
+ return true;
   });
 
 UPON("sent", function() {
