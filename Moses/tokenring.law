@@ -1,0 +1,221 @@
+law(tokenring, language(javascript))
+
+manager = "manager@new-host.home";
+
+
+/* Incremental code */
+UPON("arrived", function() {
+    if (this.self === manager && this.message.action === "join") {
+            // Add new agent to manager list
+            CS("members").push(this.sender);
+            no_of_members = CS("members").length;
+			
+			if (no_of_members == 0) {
+            // Approval Message to the requesting agent    
+            DO("forward", {
+                sender: this.self,
+                receiver: this.sender,
+                message: {       
+                  action: "approved",
+                  next_member: "bavs", //CS("members")[0],
+				  length: no_of_members
+                }
+            });
+			}
+            // Updation Message to the last agent in the manager list to update its next member
+            
+            if (no_of_members > 1) {
+                DO("forward", {
+                  sender: this.self,
+                  receiver: CS("members")[no_of_members - 2],
+                  message: {       
+                    action: "update",
+                    next_member: this.sender,
+                  }
+                });
+            }  
+        
+    } else if (this.self !== manager  && (this.message.action === "approved" || this.message.action === "update")) {
+            DO("set", {
+                key: "next",
+                value: this.message.next_member,
+            });
+    }
+                    
+
+});
+/* End of Incremental code */
+        
+        
+UPON("adopted", function() {
+	if (this.self !== manager) {
+	  DO("set", {
+		key: "token",
+		value: false
+	  });
+	  
+	  DO("set", {
+		key: "next",
+		value: null
+	  });
+	  
+	  DO("forward", {
+		sender: this.self,
+		receiver: manager,
+		message: {       
+		  action: "join",
+		  member: this.self
+		}
+	  });
+	}
+    
+	if (this.self === manager) {
+    // Create member list for manager
+	  DO("set", {
+        key: "members",
+        value: [ ]
+      });
+        
+      DO("impose_obligation", {
+		  type: "checkRingAlive",
+		  time: 12
+	  });
+	  
+	}
+	
+    /*
+	if (this.self === a){
+		 DO("set", {
+			 key: "next",
+			 value: "b@ROMINAs-Air.home"
+	  });
+	 }
+	if (this.self === b){
+		 DO("set", {
+			 key: "next",
+			 value: "c@ROMINAs-Air.home"
+	  });
+	 }
+	if (this.self === c){
+		 DO("set", {
+			 key: "next",
+			 value: "a@ROMINAs-Air.home"
+	  });
+	}
+    */
+    
+    
+    return true;
+  });
+
+UPON("sent", function() {
+	if( this.self !== manager && CS("token") === true){
+    DO("forward");
+	return true;
+	}
+	
+	else if(this.self === manager){
+		DO("forward");
+		return true;
+	}
+	
+});
+
+UPON("arrived", function() {
+	
+	if(this.self === manager && this.message.action === "Token_received" ){ //when first time ring begins when first time obligation_due(checkRingAlive)//
+		DO("repeal_obligation", {
+			type: "checkRingAlive"
+		});
+		DO("impose_obligation",{
+			type: "checkRingAlive",
+			time: 12
+			});
+	}
+	
+	if(this.self === manager && this.message.action === "Token_passed"){ //when manager is informed in obligation_due(releaseToken)// 
+		DO("repeal_obligation", {
+			type: "checkRingAlive"
+		});
+		DO("impose_obligation",{
+			type: "checkRingAlive",
+			time: 12
+			});
+	}
+	
+	if(this.self !== manager && this.message.action === "firsttoken"){ //for obligation_due(checkRingAlive)//
+	  DO("set", {
+		  key: "token",
+		  value: true
+	  });
+	  DO("impose_obligation",{
+	  type: "releaseToken",
+	  time: 10
+	  });
+	  DO ("forward", {
+		  sender: this.self,
+		  receiver: manager,
+		  message: {
+		    action: "Token_received",
+			by: this.self
+		  }
+	  });
+	} 
+	
+	if(this.self !== manager && this.message.action === "token"){ //when token is passed to next in obligation_due(releaseToken)//
+		DO("set", {
+		  key: "token",
+		  value: true
+		  });
+		DO("impose_obligation",{
+			  type: "releaseToken",
+			  time: 10
+			  });
+		DO("forward", {
+				sender: this.self,
+				receiver: manager,
+				message: {
+					action: "Token_passed",
+					sender: this.sender,
+					receiver: this.self
+					  }
+					  });
+	}
+	
+  DO("deliver");
+  return true;
+});
+
+UPON("obligation_due", function() {
+	
+	if (this.type === "releaseToken") {
+	
+	DO( "forward", {
+		sender: this.self,
+		receiver: CS("next"),
+		message: {
+			action: "token"}	
+	});	
+	
+	DO("repeal_obligation", {
+		type: "releaseToken"
+	});
+	
+	DO( "set", {
+		key: "token",
+		value: false
+	});
+	}
+	
+
+    else if (this.type === "checkRingAlive"){
+	DO( "forward", {
+		sender: this.self,
+		receiver: "a@new-host.home",
+		message: {
+			action: "firsttoken"
+			}	
+	});	
+	
+	}
+});
