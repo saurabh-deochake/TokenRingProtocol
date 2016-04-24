@@ -2,13 +2,14 @@ law(tokenring, language(javascript))
 
 manager = "manager@new-host.home";
 
+array = [];
 
 /* Incremental code */
-UPON("arrived", function() {
+/*UPON("arrived", function() {
     if (this.self === manager && this.message.action === "join") {
             // Add new agent to manager list
-            CS("members").push(this.sender);
-            no_of_members = CS("members").length;
+            CS("membersList").push(this.sender);
+            no_of_members = CS("membersList").length;
 			
 			if (no_of_members == 0) {
             // Approval Message to the requesting agent    
@@ -27,7 +28,7 @@ UPON("arrived", function() {
             if (no_of_members > 1) {
                 DO("forward", {
                   sender: this.self,
-                  receiver: CS("members")[no_of_members - 2],
+                  receiver: CS("membersList")[no_of_members - 2],
                   message: {       
                     action: "update",
                     next_member: this.sender,
@@ -41,9 +42,10 @@ UPON("arrived", function() {
                 value: this.message.next_member,
             });
     }
-                    
+    
+    //DO("deliver");                  
 
-});
+});*/
 /* End of Incremental code */
         
         
@@ -64,7 +66,9 @@ UPON("adopted", function() {
 		receiver: manager,
 		message: {       
 		  action: "join",
-		  member: this.self
+		  member: this.self,
+          CS: CS("token"),
+          Next: CS("next")
 		}
 	  });
 	}
@@ -72,10 +76,19 @@ UPON("adopted", function() {
 	if (this.self === manager) {
     // Create member list for manager
 	  DO("set", {
-        key: "members",
-        value: [ ]
+        key: "membersList",
+        value: Array()
       });
-        
+        /*
+      DO("forward", {
+        sender : this.self,
+        receiver: this.self,
+        message: {
+            action: "self state",
+            state: CS("membersList")
+         }
+      });*/
+      
       DO("impose_obligation", {
 		  type: "checkRingAlive",
 		  time: 12
@@ -123,7 +136,66 @@ UPON("sent", function() {
 
 UPON("arrived", function() {
 	
-	if(this.self === manager && this.message.action === "Token_received" ){ //when first time ring begins when first time obligation_due(checkRingAlive)//
+	if (this.self === manager && this.message.action === "join") {
+            // Add new agent to manager list
+            //CS("membersList").push(this.sender);
+            //no_of_members = CS("membersList").length;
+			array.push(this.sender);
+            no_of_members = array.length;
+            
+            DO("forward", {
+               sender: this.self,
+               receiver: this.self,
+               message: {
+                    action: "list",                
+                    members: array
+               }
+            });
+            
+			if (no_of_members == 0) {
+            // Approval Message to the requesting agent    
+            DO("forward", {
+                sender: this.self,
+                receiver: this.sender,
+                message: {       
+                  action: "approved",
+                  next_member: array[0],
+				  //members: CS("membersList")
+                }
+            });
+			}
+            // Updation Message to the last agent in the manager list to update its next member
+            
+            if (no_of_members > 1) {
+                DO("forward", {
+                  sender: this.self,
+                  //receiver: CS("membersList")[no_of_members - 2],
+                  receiver: array[no_of_members -2],
+                  message: {       
+                    action: "update",
+                    next_member: this.sender,
+                  }
+                });
+                
+                DO("forward", {
+                  sender: this.self,
+                  //receiver: CS("membersList")[no_of_members - 2],
+                  receiver: array[no_of_members -1],
+                  message: {       
+                    action: "update",
+                    next_member: array[0],
+                  }
+                });
+            }  
+        
+    } else if (this.self !== manager  && (this.message.action === "approved" || this.message.action === "update")) {
+            DO("set", {
+                key: "next",
+                value: this.message.next_member,
+            });
+    }
+    
+    if(this.self === manager && this.message.action === "Token_received" ){ //when first time ring begins when first time obligation_due(checkRingAlive)//
 		DO("repeal_obligation", {
 			type: "checkRingAlive"
 		});
@@ -139,7 +211,7 @@ UPON("arrived", function() {
 		});
 		DO("impose_obligation",{
 			type: "checkRingAlive",
-			time: 12
+			time: 7
 			});
 	}
 	
@@ -150,7 +222,7 @@ UPON("arrived", function() {
 	  });
 	  DO("impose_obligation",{
 	  type: "releaseToken",
-	  time: 10
+	  time: 5
 	  });
 	  DO ("forward", {
 		  sender: this.self,
@@ -169,7 +241,7 @@ UPON("arrived", function() {
 		  });
 		DO("impose_obligation",{
 			  type: "releaseToken",
-			  time: 10
+			  time: 5
 			  });
 		DO("forward", {
 				sender: this.self,
@@ -211,7 +283,7 @@ UPON("obligation_due", function() {
     else if (this.type === "checkRingAlive"){
 	DO( "forward", {
 		sender: this.self,
-		receiver: "a@new-host.home",
+		receiver: array[0],
 		message: {
 			action: "firsttoken"
 			}	
