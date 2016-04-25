@@ -255,7 +255,7 @@ UPON("obligation_due", function() {
 UPON("disconnected", function() {
   if (this.self !== manager && this.self!= server) {
     index = ring.indexOf(this.self);
-    ring.splice(index,1);
+    
     
     
             no_of_members = ring.length;
@@ -281,13 +281,24 @@ UPON("disconnected", function() {
                 DO("forward", {
                   sender: this.self,
                   //receiver: CS("membersList")[no_of_members - 2],
-                  receiver: ring[no_of_members -2],
+                  receiver: ring[index-1],
                   message: {       
                     action: "update",
-                    next_member: ring[no_of_members-1],
+                    next_member: ring[index+1],
                   }
                 });
-                
+            
+            if (no_of_members > 1 && index === no_of_members -1) {
+                DO("forward", {
+                    sender: this.self,
+                    receiver: ring[index-1],
+                    message: {
+                        action: "update",
+                        next_member: ring[0]
+                    }
+                });
+            }
+            /*    
                 DO("forward", {
                   sender: this.self,
                   //receiver: CS("membersList")[no_of_members - 2],
@@ -296,14 +307,14 @@ UPON("disconnected", function() {
                     action: "update",
                     next_member: ring[0],
                   }
-                });
+                });*/
             }
     
     
     
     
     
-    
+    ring.splice(index,1);
     
     DO("forward", {
       sender: this.self,
