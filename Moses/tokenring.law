@@ -1,3 +1,10 @@
+
+/* LGI Law which applies Token Ring Protocol
+ * Authors: Saurabh Deochake (srd117)
+ *          Niraj Dholakia (nd387)
+ *          Romina Nayak (rn279)
+ */
+
 law(tokenring, language(javascript))
 
 manager = "manager@new-host.home";
@@ -5,10 +12,10 @@ server = "server@new-host.home";
 
 ring = [];
         
-        
 //================== ADOPTION OF AGENTS =================================
 UPON("adopted", function() {
-	if (this.self !== manager && this.self !== server) {
+	//If it is agent in the token ring
+    if (this.self !== manager && this.self !== server) {
 	  DO("set", {
 		key: "token",
 		value: false
@@ -25,8 +32,6 @@ UPON("adopted", function() {
 		message: {       
 		  action: "join",
 		  member: this.self,
-          //CS: CS("token"),
-          //Next: CS("next")
 		}
 	  });
 	}
@@ -75,20 +80,10 @@ UPON("sent", function() {
 UPON("arrived", function() {
 	
 	if (this.self === manager && this.message.action === "join") {
-            // Add new agent to manager list
-            //CS("membersList").push(this.sender);
-            //no_of_members = CS("membersList").length;
-			ring.push(this.sender);
-            no_of_members = ring.length;
+            // Add new agent to ring managed by manager
             
-            /*DO("forward", {
-               sender: this.self,
-               receiver: this.self,
-               message: {
-                    action: "list",                
-                    members: array
-               }
-            });*/
+			ring.push(this.sender);
+            no_of_members = ring.length
             
 			if (no_of_members == 0) {
             // Approval Message to the requesting agent    
@@ -98,7 +93,6 @@ UPON("arrived", function() {
                 message: {       
                   action: "approved",
                   next_member: ring[0],
-				  //members: CS("membersList")
                 }
             });
 			}
@@ -108,7 +102,6 @@ UPON("arrived", function() {
             if (no_of_members > 1) {
                 DO("forward", {
                   sender: this.self,
-                  //receiver: CS("membersList")[no_of_members - 2],
                   receiver: ring[no_of_members -2],
                   message: {       
                     action: "update",
@@ -118,7 +111,6 @@ UPON("arrived", function() {
                 
                 DO("forward", {
                   sender: this.self,
-                  //receiver: CS("membersList")[no_of_members - 2],
                   receiver: ring[no_of_members -1],
                   message: {       
                     action: "update",
@@ -237,7 +229,7 @@ UPON("obligation_due", function() {
 	});
 	}
 	
-
+    // Token Lost fault tolerance
     else if (this.type === "checkRingAlive"){
 	DO( "forward", {
 		sender: this.self,
@@ -251,17 +243,14 @@ UPON("obligation_due", function() {
 });
 //======================END=======================================
 
+// Fault tolerance to loss of agents in the list
 
 UPON("disconnected", function() {
   if (this.self !== manager && this.self!= server) {
     index = ring.indexOf(this.self);
-    
-    
-    
+
             no_of_members = ring.length;
-            
-            
-            
+                        
 			if (no_of_members == 0) {
             // Approval Message to the requesting agent    
             DO("forward", {
@@ -270,7 +259,6 @@ UPON("disconnected", function() {
                 message: {       
                   action: "approved",
                   next_member: ring[0],
-				  //members: CS("membersList")
                 }
             });
 			}
@@ -280,7 +268,6 @@ UPON("disconnected", function() {
             if (no_of_members > 1) {
                 DO("forward", {
                   sender: this.self,
-                  //receiver: CS("membersList")[no_of_members - 2],
                   receiver: ring[index-1],
                   message: {       
                     action: "update",
@@ -298,21 +285,11 @@ UPON("disconnected", function() {
                     }
                 });
             }
-            /*    
-                DO("forward", {
-                  sender: this.self,
-                  //receiver: CS("membersList")[no_of_members - 2],
-                  receiver: ring[no_of_members -1],
-                  message: {       
-                    action: "update",
-                    next_member: ring[0],
-                  }
-                });*/
             }
     
     
     
-    
+    // remove the dead agent from the ring
     
     ring.splice(index,1);
     
