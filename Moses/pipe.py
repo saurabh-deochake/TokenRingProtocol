@@ -2,7 +2,7 @@
 import os
 import subprocess
 import shlex
-from termcolor import colored
+
 
 dim = []
 log = "log.txt"
@@ -16,6 +16,8 @@ for line in iter(proc.stdout.readline, ''):
    f.write(line)
 ##print dim
 ##f.close()"""
+
+print "Now accepting connections...\n\n Serving agents with tokens\n\n"
 
 process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
 
@@ -31,5 +33,5 @@ while True:
         if output:
             agent = output.strip().split()
             if agent[0] == "Received:":
-                print colored(agent[1][1:],'red')
+                print agent[1][1:]#"\033[1;33;40m" +agent[1][1:]
         rc = process.poll()
