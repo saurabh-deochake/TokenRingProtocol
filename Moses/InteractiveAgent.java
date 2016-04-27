@@ -105,15 +105,15 @@ public class InteractiveAgent implements Agent{
     }
 
     public void processReply(Member member, String reply) {
-        System.out.println("Received: " + reply);
+        System.out.println("Received: this " + reply);
     }
 
     public void processReply(Member member, byte[] breply) {
-        System.out.println("Received: " + breply);
+      System.out.println("Received: byte " + breply);
     }
 
     public void processReply(Member member, Object oreply) {
-        System.out.println("Received: " + oreply);
+        System.out.println("Received: object " + oreply);
     }
 
     public static void main (String[] args) throws Exception { 
